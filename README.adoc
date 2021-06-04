@@ -1,0 +1,5 @@
+= python-rust-interop-demo
+
+Test this by running `./test.sh`.
+
+More info: https://pyo3.rs/
