@@ -36,9 +36,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     safe_setlocale(LC_ALL, "hu_HU.UTF-8".to_string())?;
 
     strings.sort_by(|a, b| {
-        safe_strxfrm(&a.to_string())
-            .unwrap()
-            .cmp(&safe_strxfrm(&b.to_string()).unwrap())
+        let mut a_key = "".to_string();
+        if let Ok(value) = safe_strxfrm(&a.to_string()) {
+            a_key = value;
+        }
+        let mut b_key = "".to_string();
+        if let Ok(value) = safe_strxfrm(&b.to_string()) {
+            b_key = value;
+        }
+        a_key.cmp(&b_key)
     });
 
     println!("strings is '{:?}'", strings);
