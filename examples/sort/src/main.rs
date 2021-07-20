@@ -1,3 +1,10 @@
+#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+
+//! strxfrm() example.
+
 use libc::c_int;
 use libc::setlocale;
 use libc::strxfrm;
@@ -11,7 +18,7 @@ fn safe_setlocale(category: c_int, locale: String) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-fn safe_strxfrm(src: &String) -> Result<String, Box<dyn std::error::Error>> {
+fn safe_strxfrm(src: &str) -> Result<String, Box<dyn std::error::Error>> {
     let src_cstring = std::ffi::CString::new(src.as_bytes())?;
     // Assume no change in size, first.
     let n1 = src.len() + 1;

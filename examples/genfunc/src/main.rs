@@ -1,3 +1,10 @@
+#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+
+//! Generic function example.
+
 trait Tr {
     fn foo(&self) -> i64;
 }

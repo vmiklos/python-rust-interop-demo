@@ -1,3 +1,10 @@
+#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+
+//! The i18n module allows UI translation via gettext.
+
 thread_local! {
     static TRANSLATIONS: std::cell::RefCell<Option<gettext::Catalog>> = std::cell::RefCell::new(None);
 }

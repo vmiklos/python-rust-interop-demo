@@ -1,3 +1,10 @@
+#![deny(warnings)]
+#![warn(clippy::all)]
+#![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+
+//! The rust module allows Python <-> Rust interop.
+
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use pyo3::types::PyFloat;
@@ -61,7 +68,7 @@ impl PyChronoTimer {
 }
 
 #[pymodule]
-fn rust(_py: Python, m: &PyModule) -> PyResult<()> {
+fn rust(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_string_today, m)?)?;
     m.add_class::<PyChronoTimer>()?;
 
