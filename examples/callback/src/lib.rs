@@ -31,21 +31,34 @@ impl Timer for ChronoTimer {
     }
 }
 
-struct PyTimer {
-    now: i64,
+struct PyTimer<'a> {
+    timer: &'a PyAny,
 }
 
-impl Timer for PyTimer {
+impl<'a> PyTimer<'a> {
+    fn new(timer:  &'a PyAny) -> Self {
+        PyTimer{timer}
+    }
+
+    fn time_or_err(&self) -> PyResult<i64> {
+        let now_any = self.timer.call_method0("time")?;
+        Ok(now_any.downcast::<PyFloat>()?.value().round() as i64)
+    }
+}
+
+impl<'a> Timer for PyTimer<'a> {
     fn time(&self) -> i64 {
-        self.now
+        if let Ok(value) = self.time_or_err() {
+            return value;
+        }
+
+        0
     }
 }
 
 #[pyfunction]
 fn py_string_today(timer: &PyAny) -> PyResult<String> {
-    let now_any = timer.call_method0("time")?;
-    let now = now_any.downcast::<PyFloat>()?.value().round() as i64;
-    let timer = PyTimer{now};
+    let timer = PyTimer::new(timer);
     Ok(string_today(&timer))
 }
 
