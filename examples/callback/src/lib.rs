@@ -31,22 +31,24 @@ impl Timer for ChronoTimer {
     }
 }
 
-struct PyTimer<'a> {
-    timer: &'a PyAny,
+struct PyTimer {
+    timer: Py<PyAny>,
 }
 
-impl<'a> PyTimer<'a> {
-    fn new(timer:  &'a PyAny) -> Self {
+impl PyTimer {
+    fn new(timer: Py<PyAny>) -> Self {
         PyTimer{timer}
     }
 
     fn time_or_err(&self) -> PyResult<i64> {
-        let now_any = self.timer.call_method0("time")?;
-        Ok(now_any.downcast::<PyFloat>()?.value().round() as i64)
+        Python::with_gil(|py| {
+            let now_any: Py<PyAny> = self.timer.call_method0(py, "time")?;
+            Ok(now_any.as_ref(py).downcast::<PyFloat>()?.value().round() as i64)
+        })
     }
 }
 
-impl<'a> Timer for PyTimer<'a> {
+impl Timer for PyTimer {
     fn time(&self) -> i64 {
         if let Ok(value) = self.time_or_err() {
             return value;
@@ -58,7 +60,7 @@ impl<'a> Timer for PyTimer<'a> {
 
 #[pyfunction]
 fn py_string_today(timer: &PyAny) -> PyResult<String> {
-    let timer = PyTimer::new(timer);
+    let timer = PyTimer::new(timer.into());
     Ok(string_today(&timer))
 }
 
