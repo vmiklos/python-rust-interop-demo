@@ -5,12 +5,18 @@ use pyo3::types::PyType;
 use pyo3::PyObject;
 use std::io::BufRead;
 use std::io::Read;
+use std::io::Write;
 use std::ops::DerefMut;
 use std::sync::Arc;
 use std::sync::Mutex;
 
 fn open_read(path: &str) -> anyhow::Result<Arc<Mutex<dyn Read + Send>>> {
     let ret: Arc<Mutex<dyn Read + Send>> = Arc::new(Mutex::new(std::fs::File::open(path)?));
+    Ok(ret)
+}
+
+fn open_write(path: &str) -> anyhow::Result<Arc<Mutex<dyn Write + Send>>> {
+    let ret: Arc<Mutex<dyn Write + Send>> = Arc::new(Mutex::new(std::fs::File::create(path)?));
     Ok(ret)
 }
 
@@ -96,6 +102,43 @@ impl PyIterProtocol for PyRead {
     }
 }
 
+#[pyclass]
+struct PyWrite {
+    write: Arc<Mutex<dyn Write + Send>>,
+}
+
+#[pymethods]
+impl PyWrite {
+    fn write(&mut self, buf: &[u8]) -> PyResult<usize> {
+        let mut guard = self.write.lock().unwrap();
+        match guard.write_all(buf) {
+            Ok(_) => Ok(buf.len()),
+            Err(err) => Err(pyo3::exceptions::PyOSError::new_err(format!(
+                "write() failed: {}",
+                err.to_string()
+            ))),
+        }
+    }
+
+    fn close(&mut self) -> PyResult<()> {
+        Ok(())
+    }
+
+    fn __enter__(&self) -> Self {
+        let write = self.write.clone();
+        PyWrite { write }
+    }
+
+    fn __exit__(
+        &mut self,
+        _ty: Option<&PyType>,
+        _value: Option<&PyAny>,
+        _traceback: Option<&PyAny>,
+    ) -> bool {
+        true
+    }
+}
+
 #[pyfunction]
 fn py_open_read(path: &str) -> PyResult<PyRead> {
     match open_read(path) {
@@ -107,9 +150,21 @@ fn py_open_read(path: &str) -> PyResult<PyRead> {
     }
 }
 
+#[pyfunction]
+fn py_open_write(path: &str) -> PyResult<PyWrite> {
+    match open_write(path) {
+        Ok(value) => Ok(PyWrite { write: value }),
+        Err(err) => Err(pyo3::exceptions::PyOSError::new_err(format!(
+            "open_write() failed: {}",
+            err.to_string()
+        ))),
+    }
+}
+
 #[pymodule]
 fn rust(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_open_read, m)?)?;
+    m.add_function(wrap_pyfunction!(py_open_write, m)?)?;
 
     Ok(())
 }
